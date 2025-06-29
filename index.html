@@ -1,108 +1,114 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>診所預約系統</title>
+  <title>預約表單</title>
   <style>
     body {
       font-family: sans-serif;
-      max-width: 500px;
-      margin: 2em auto;
-      padding: 1em;
-      background-color: #f8f8f8;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #ccc;
+      padding: 2em;
+      max-width: 600px;
+      margin: auto;
     }
-    label, select, input {
-      display: block;
+    input, select {
       width: 100%;
-      margin-top: 1em;
+      margin-bottom: 1em;
       padding: 0.5em;
-      font-size: 1em;
     }
     button {
-      margin-top: 1.5em;
-      padding: 0.75em;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      font-size: 1em;
-      cursor: pointer;
+      padding: 0.7em 1.5em;
     }
     #result {
-      margin-top: 1.5em;
-      font-weight: bold;
+      margin-top: 2em;
+      padding: 1em;
+      background: #f0f8ff;
+      border: 1px solid #00f;
     }
   </style>
 </head>
 <body>
-  <h2>診所預約表單</h2>
-  <form id="reservationForm">
-    <label>預約日期：<input type="date" id="date" name="date" required /></label>
+  <h1>預約表單</h1>
+  <form id="bookingForm">
+    <label>預約日期：<input type="date" name="date" required /></label>
     <label>診別：
-      <select id="session" name="session" required>
+      <select name="session" required>
+        <option value="">請選擇</option>
         <option value="早上診">早上診</option>
         <option value="下午診">下午診</option>
         <option value="晚上診">晚上診</option>
       </select>
     </label>
     <label>初診或複診：
-      <select id="visitType" name="visitType" required>
+      <select name="visitType" id="visitType" required>
+        <option value="">請選擇</option>
         <option value="初診">初診</option>
         <option value="複診">複診</option>
       </select>
     </label>
-    <label>姓名：<input type="text" id="name" name="name" required /></label>
-    <label>出生年月日：<input type="date" id="birthday" name="birthday" required /></label>
-    <label>身分證字號（初診必填）：<input type="text" id="idNumber" name="idNumber" /></label>
-    <label>連絡電話：<input type="tel" id="phone" name="phone" required /></label>
-    <button type="submit">送出預約</button>
+    <label>姓名：<input type="text" name="name" required /></label>
+    <label>出生年月日：<input type="date" name="birthday" required /></label>
+    <label>身分證字號：<input type="text" name="idNumber" id="idNumber" /></label>
+    <label>聯絡電話或手機：<input type="tel" name="phone" required /></label>
+    <button type="submit">送出</button>
   </form>
-  <div id="result"></div>
+  <div id="result" style="display:none;"></div>
+
   <script>
-    const form = document.getElementById('reservationForm');
-    const result = document.getElementById('result');
+    const form = document.getElementById("bookingForm");
+    const result = document.getElementById("result");
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
 
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-
-      // 身分證驗證（初診必填）
-      if (data.visitType === '初診' && !data.idNumber.trim()) {
-        alert('初診者請填寫身分證字號');
+      // 驗證日期（限制兩週內）
+      const today = new Date();
+      const maxDate = new Date();
+      maxDate.setDate(today.getDate() + 14);
+      const inputDate = new Date(data.date);
+      if (inputDate < today || inputDate > maxDate) {
+        alert("僅開放兩週內的日期預約");
         return;
       }
 
-      const today = new Date();
-      const selectedDate = new Date(data.date);
-      const maxDate = new Date();
-      maxDate.setDate(today.getDate() + 14);
+      // 驗證身分證格式（初診）
+      if (data.visitType === "初診") {
+        const id = data.idNumber;
+        const idRegex = /^[A-Z][12]\d{8}$/;
+        if (!idRegex.test(id)) {
+          alert("初診請填入有效的身分證字號");
+          return;
+        }
+      }
 
-      if (selectedDate < today || selectedDate > maxDate) {
-        alert('僅能預約未來 14 天內的日期');
+      // 驗證生日不能超過今天
+      const birthday = new Date(data.birthday);
+      if (birthday > today || birthday.getFullYear() < today.getFullYear() - 150) {
+        alert("請輸入合理的出生年月日");
         return;
       }
 
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbyMFaIoEaHtOqP1Qo6dSQ1MQV4Gs9oN3EPwBx0AjFYUJeCBU55puNx6VmwEmzE_dKEB/exec', {
-          method: 'POST',
+        const res = await fetch("https://script.google.com/macros/s/AKfycbyMFaIoEaHtOqP1Qo6dSQ1MQV4Gs9oN3EPwBx0AjFYUJeCBU55puNx6VmwEmzE_dKEB/exec", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
-          headers: {
-            'Content-Type': 'application/json'
-          }
         });
-        const res = await response.json();
-        if (res.success) {
-          result.innerHTML = `<p style="color:green">預約成功！您的號碼是 ${res.number} 號</p>
-          <p><a href="https://line.me/R/ti/p/@xxxxx">🔙 返回官方 LINE</a></p>`;
+        const resData = await res.json();
+        if (resData.success) {
+          result.innerHTML = `✅ 預約成功！您的號碼是第 ${resData.number} 號<br><br><a href="https://line.me/R/ti/p/@your_line_id">返回官方LINE帳號</a>`;
+          result.style.display = "block";
           form.reset();
         } else {
-          throw new Error(res.message);
+          alert(resData.message || "預約失敗，請稍後再試");
         }
       } catch (err) {
-        result.innerHTML = `<p style="color:red">預約失敗：${err.message}</p>`;
+        alert("傳送失敗，請檢查網路或稍後再試");
+        console.error(err);
       }
     });
+  </script>
+</body>
+</html>
