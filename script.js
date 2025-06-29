@@ -1,45 +1,67 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("bookingForm");
+  const visitType = document.getElementById("visitType");
+  const idField = document.getElementById("idLabel");
+  const idNumber = document.getElementById("idNumber");
+  const nameInput = document.getElementById("name");
+  const phoneInput = document.getElementById("phone");
+  const birthdayInput = document.getElementById("birthday");
+  const dateInput = document.getElementById("date");
+  const sessionSelect = document.getElementById("session");
 
-  form.addEventListener("submit", async function (e) {
+  const today = new Date();
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() + 1);
+  const maxDate = new Date(today);
+  maxDate.setDate(today.getDate() + 14);
+  dateInput.min = minDate.toISOString().split("T")[0];
+  dateInput.max = maxDate.toISOString().split("T")[0];
+
+  const sessionOptions = {
+    0: [],
+    1: ["早上診", "下午診"],
+    2: ["早上診", "晚上診"],
+    3: ["早上診", "下午診"],
+    4: ["早上診", "晚上診"],
+    5: ["早上診", "下午診"],
+    6: ["早上診"]
+  };
+
+  dateInput.addEventListener("change", () => {
+    const day = new Date(dateInput.value).getDay();
+    const options = sessionOptions[day] || [];
+    sessionSelect.innerHTML = "<option value=''>請選擇</option>" +
+      options.map(o => `<option value="${o}">${o}</option>`).join("");
+  });
+
+  visitType.addEventListener("change", () => {
+    const isFirst = visitType.value === "初診";
+    idField.style.display = isFirst ? "block" : "none";
+    idNumber.required = isFirst;
+  });
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const data = {
-      fields: {
-        "預約日期": document.getElementById("date").value,
-        "姓名": document.getElementById("name").value,
-        "初診或複診": document.getElementById("visitType").value,
-        "出生年月日": document.getElementById("birthday").value,
-        "聯絡電話": document.getElementById("phone").value,
-        "身分證字號": document.getElementById("idNumber").value
-      }
-    };
+    const name = nameInput.value.trim();
+    if (/\d/.test(name)) return alert("姓名不能包含數字");
 
-    const token = "patKPwGQ3DhIsnkHO..."; // << 這裡換成你的 Airtable Token
-    const baseId = "appFBOKgLylcGBUG7"; // << 你的 Base ID
-    const tableName = "診所預約"; // << 你的表單名稱
+    const phone = phoneInput.value.trim();
+    if (!/^\d+$/.test(phone)) return alert("電話只能是數字");
 
-    try {
-      const response = await fetch(`https://api.airtable.com/v0/appFBOKgLylcGBUG7/%E8%A8%BA%E6%89%80%E9%A0%90%E7%B4%84}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      });
+    const birthday = new Date(birthdayInput.value);
+    if (birthday > today) return alert("生日不能是未來的日期");
+    if (today.getFullYear() - birthday.getFullYear() > 150) return alert("請輸入合理的生日");
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        alert("預約失敗：" + (result.error?.message || "未知錯誤"));
-        return;
-      }
-
-      alert("✅ 預約成功！");
-      form.reset();
-    } catch (error) {
-      alert("❌ 發生錯誤：" + error.message);
+    if (visitType.value === "初診") {
+      const id = idNumber.value.trim();
+      if (!/^[A-Z][12]\d{8}$/.test(id)) return alert("身分證格式錯誤");
     }
+
+    // 模擬重複預約查詢 (需實作 Airtable API 查詢)
+    const duplicate = false;
+    if (duplicate) return alert("您已預約，請勿重複預約");
+
+    alert("✅ 驗證通過，請接續連接 Airtable 寫入程式碼");
   });
 });
