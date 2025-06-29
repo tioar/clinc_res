@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>診所預約表單</title>
+  <style>
+    body { font-family: 'Microsoft JhengHei'; background: #f0f8ff; text-align: center; padding: 20px; }
+    form { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    input, select, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { background-color: #1e90ff; color: white; border: none; cursor: pointer; }
+    #successMessage { display: none; }
+  </style>
+</head>
+<body>
+  <h2>診所預約表單</h2>
+  <form id="reservation-form">
+    <input type="date" id="date" required>
+    <select id="session" required>
+      <option value="">請選擇診別</option>
+      <option value="早上診">早上診</option>
+      <option value="下午診">下午診</option>
+      <option value="晚上診">晚上診</option>
+    </select>
+    <input type="text" id="name" placeholder="姓名" required>
+    <input type="date" id="birthday" placeholder="生日" required>
+    <input type="text" id="idNumber" placeholder="身分證字號（初診必填）">
+    <input type="tel" id="phone" placeholder="電話" required>
+    <button type="submit">送出預約</button>
+  </form>
+  <div id="successMessage">
+    <h3 style="color: green;">預約成功！您的號碼是 <span id="orderNumber"></span> 號</h3>
+    <a href="https://page.line.me/213jdxim" style="color:#2563eb">👉 返回 LINE 官方帳號</a>
+  </div>
+  <script>
+    document.getElementById("reservation-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const data = {
+        date: document.getElementById("date").value,
+        session: document.getElementById("session").value,
+        name: document.getElementById("name").value,
+        birthday: document.getElementById("birthday").value,
+        idNumber: document.getElementById("idNumber").value,
+        phone: document.getElementById("phone").value
+      };
+      const res = await fetch("https://script.google.com/macros/s/AKfycbyMFaIoEaHtOqP1Qo6dSQ1MQV4Gs9oN3EPwBx0AjFYUJeCBU55puNx6VmwEmzE_dKEB/exec", {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (result.success) {
+        document.getElementById("reservation-form").style.display = "none";
+        document.getElementById("orderNumber").textContent = result.number;
+        document.getElementById("successMessage").style.display = "block";
+      } else {
+        alert(result.message || "預約失敗，請稍後再試");
+      }
+    });
+  </script>
+</body>
+</html>
