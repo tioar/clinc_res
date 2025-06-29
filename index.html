@@ -51,8 +51,11 @@
   <form id="bookingForm">
     <label>預約日期：<input type="date" name="預約日期" id="date" required /></label>
     <label>預約診別：
-      <select name="預約診別" id="session" required>
-        <option value="">請先選擇日期</option>
+      <select name="預約診別" id="visitType" required>
+        <option value="">請選擇</option>
+        <option value="早上診">早上診</option>
+        <option value="下午診">下午診</option>
+        <option value="晚上診">晚上診</option>
       </select>
     </label>
     <label>姓名：<input type="text" name="姓名" id="name" required /></label>
