@@ -71,7 +71,97 @@
     <label id="idLabel">身分證字號：<input type="text" name="身分證字號" id="idNumber" /></label>
     <button type="submit">送出</button>
   </form>
+  <script>
+    const airtableApiKey = "patKPwGQ3DhIsnkHO.a67408ac1443a0e2411bb271b2adba5498145a5affd4e124eed1f35beef5de45";
+    const baseId = "appFBOKgLylcGBUG7";
+    const tableName = "診所預約";
+    const limitTable = "每日上限";
 
+    const sessionOptions = {
+      1: ["早上診", "下午診"],
+      2: ["早上診", "晚上診"],
+      3: ["早上診", "下午診"],
+      4: ["早上診", "晚上診"],
+      5: ["早上診", "下午診"],
+      6: ["早上診"],
+      0: []
+    };
+
+    const weekdayMap = ["日", "一", "二", "三", "四", "五", "六"];
+    const dateInput = document.getElementById("date");
+    const sessionSelect = document.getElementById("session");
+    const visitTypeSelect = document.getElementById("visitType");
+    const idLabel = document.getElementById("idLabel");
+
+    const today = new Date();
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 1);
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 14);
+
+    dateInput.min = minDate.toISOString().split("T")[0];
+    dateInput.max = maxDate.toISOString().split("T")[0];
+
+    dateInput.addEventListener("change", () => {
+      const day = new Date(dateInput.value).getDay();
+      const options = sessionOptions[day] || [];
+      sessionSelect.innerHTML = "<option value=''>請選擇</option>" +
+        options.map(s => `<option value="${s}">${s}</option>`).join("");
+    });
+
+    visitTypeSelect.addEventListener("change", () => {
+      const isFirstVisit = visitTypeSelect.value === "初診";
+      idLabel.style.display = isFirstVisit ? "block" : "none";
+      document.getElementById("idNumber").required = isFirstVisit;
+    });
+
+    async function checkSlotAvailable(date, session) {
+      const weekday = weekdayMap[new Date(date).getDay()];
+
+      const countRes = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=${encodeURIComponent(`AND({預約日期}='${date}', {預約診別}='${session}')`)}`, {
+        headers: { Authorization: `Bearer ${airtableApiKey}` }
+      });
+      const countData = await countRes.json();
+      const currentCount = countData.records.length;
+
+      const limitRes = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(limitTable)}?filterByFormula=${encodeURIComponent(`AND({星期幾}='${weekday}', {時段}='${session}')`)}`, {
+        headers: { Authorization: `Bearer ${airtableApiKey}` }
+      });
+      const limitData = await limitRes.json();
+      const limit = limitData.records[0]?.fields["上限人數"] || 0;
+
+      return currentCount < limit;
+    }
+
+    document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const record = {};
+      formData.forEach((value, key) => record[key] = value);
+
+      const available = await checkSlotAvailable(record["預約日期"], record["預約診別"]);
+      if (!available) {
+        alert("❌ 該時段已額滿，請選擇其他時段！");
+        return;
+      }
+
+      const response = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${airtableApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ fields: record })
+      });
+
+      if (response.ok) {
+        alert("✅ 預約成功！");
+        e.target.reset();
+      } else {
+        const err = await response.json();
+        alert("❌ 預約失敗：" + err.error.message);
+      }
+    });
   <script src="script.js"></script>
 </body>
 </html>
