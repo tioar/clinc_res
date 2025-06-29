@@ -112,10 +112,10 @@
         record[key] = value;
       });
 
-      const response = await fetch(`https://api.airtable.com/v0/appFBOKgLylcGBUG7/%E8%A8%BA%E6%89%80%E9%A0%90%E7%B4%84}`, {
+      const response = await fetch(`https://api.airtable.com/v0/${appFBOKgLylcGBUG}/${encodeURIComponent(診所預約)}`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${patKPwGQ3DhIsnkHO.a67408ac1443a0e2411bb271b2adba5498145a5affd4e124eed1f35beef5de45}`,
+          Authorization: `Bearer ${airtableApiKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ fields: record })
