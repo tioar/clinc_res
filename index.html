@@ -36,6 +36,13 @@
   <h1>診所預約</h1>
   <form id="bookingForm">
     <label>預約日期：<input type="date" name="預約日期" required /></label>
+    <label>預約診別：
+      <select name="預約診別" required>
+        <option value="">請選擇</option>
+        <option value="早上診">初診</option>
+        <option value="下午診">複診</option>
+        <option value="晚上診">複診</option>
+      </select>
     <label>姓名：<input type="text" name="姓名" required /></label>
     <label>初診或複診：
       <select name="初診或複診" required>
